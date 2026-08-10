@@ -20,11 +20,14 @@ namespace ShowTime.EditorTools
             System.IO.Directory.CreateDirectory(MatDir);
             var groundMat = MakeMat("M0_Ground", new Color(0.16f, 0.17f, 0.20f));
             var playerMat = MakeMat("M0_Player", new Color(0.35f, 0.55f, 0.95f));
+            var noiseTex = NoiseTextureGen.Ensure(); // M1-②: 디졸브용 노이즈 (없으면 생성)
             var mobMats = new Material[4];
             for (int i = 0; i < 4; i++)
             {
                 float shade = 1f - i * 0.16f; // 뒷줄일수록 어둡게 — 겹침 속 깊이 표현
-                mobMats[i] = MakeMat($"M0_Mob_Row{i}", new Color(0.90f * shade, 0.35f * shade, 0.35f * shade));
+                mobMats[i] = MakeMat($"M0_Mob_Row{i}", new Color(0.90f * shade, 0.35f * shade, 0.35f * shade),
+                    "ShowTime/Mob_Combat"); // M1: 플래시+디졸브 통합 셰이더
+                mobMats[i].SetTexture("_NoiseTex", noiseTex);
             }
 
             // 바닥 — 전투 레인
@@ -55,6 +58,8 @@ namespace ShowTime.EditorTools
                 mob.transform.position = new Vector3(1.4f + col * 0.8f + jx, 0.5f, 0.2f + row * 1.1f + jz);
                 mob.transform.localScale = new Vector3(0.6f, 1.0f, 1f);
                 mob.GetComponent<Renderer>().sharedMaterial = mobMats[row];
+                mob.AddComponent<HitFlash>();  // M1-①: 플래시 구동부
+                mob.AddComponent<Dissolver>(); // M1-②: 디졸브 구동부
                 idx++;
             }
 
@@ -74,17 +79,26 @@ namespace ShowTime.EditorTools
                 light.color = new Color(1f, 0.96f, 0.90f);
             }
 
+            // M1 검증 드라이버 (플래시 스윕 → 디졸브 소멸 → 재등장 루프)
+            new GameObject("M1ShaderDemo").AddComponent<M1ShaderDemo>();
+
             System.IO.Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[M0] Stage built and saved: " + ScenePath);
         }
 
-        static Material MakeMat(string name, Color c)
+        static Material MakeMat(string name, Color c, string shaderName = "Universal Render Pipeline/Unlit")
         {
             string path = $"{MatDir}/{name}.mat";
+            var shader = Shader.Find(shaderName);
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null) { existing.color = c; return existing; }
-            var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = c };
+            if (existing != null)
+            {
+                if (existing.shader != shader) existing.shader = shader;
+                existing.color = c;
+                return existing;
+            }
+            var mat = new Material(shader) { color = c };
             AssetDatabase.CreateAsset(mat, path);
             return mat;
         }
