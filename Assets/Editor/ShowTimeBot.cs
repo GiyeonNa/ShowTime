@@ -29,6 +29,17 @@ namespace ShowTime.EditorTools
         {
             if (EditorApplication.timeSinceStartup < _next) return;
             _next = EditorApplication.timeSinceStartup + 0.5;
+
+            // record 종료 감시 (플레이 도메인 리로드에도 살아남도록 SessionState 사용)
+            if (SessionState.GetBool("st_recwatch", false)
+                && !EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                SessionState.SetBool("st_recwatch", false);
+                var rec = UnityEngine.Object.FindFirstObjectByType<ShowTime.Dev.FrameRecorder>(FindObjectsInactive.Include);
+                if (rec != null) rec.enabled = false;
+                Status("done: record");
+            }
+
             if (!File.Exists(CmdPath)) return;
             string[] lines;
             try { lines = File.ReadAllLines(CmdPath); File.Delete(CmdPath); }
@@ -85,6 +96,25 @@ namespace ShowTime.EditorTools
                     if (Arg(lines, "max", 1f) > 0.5f) sv.maximized = true;
                     sv.Repaint();
                     Status("done: scene_shot");
+                    break;
+                }
+                case "bg_on":
+                    // 에디터 백그라운드 절전 해제 — 포커스 없이도 플레이 루프가 돈다
+                    EditorPrefs.SetInt("InteractionMode", 1); // 1 = No Throttling
+                    PlayerSettings.runInBackground = true;
+                    Status("done: bg_on");
+                    break;
+                case "record":
+                {
+                    // 씬의 FrameRecorder를 켜고 플레이 — 녹화가 끝나면 레코더가 스스로 플레이를 멈춘다
+                    var rec = UnityEngine.Object.FindFirstObjectByType<ShowTime.Dev.FrameRecorder>(FindObjectsInactive.Include);
+                    if (rec == null) { Status("error: no FrameRecorder in scene"); break; }
+                    rec.interval = Arg(lines, "interval", 0.35f);
+                    rec.duration = Arg(lines, "duration", 8.2f);
+                    rec.enabled = true;
+                    SessionState.SetBool("st_recwatch", true);
+                    EditorApplication.isPlaying = true;
+                    Status("recording");
                     break;
                 }
                 case "play":

@@ -10,7 +10,8 @@ Shader "ShowTime/ScreenDistortion"
 {
     Properties
     {
-        _Progress("Progress (0=중심, 1=가장자리 도달)", Range(0, 1)) = 0
+        // 기본값 1 = fade가 0이라 전 픽셀 clip → 재생 중이 아니면 아무것도 안 그린다
+        _Progress("Progress (0=중심, 1=가장자리 도달)", Range(0, 1)) = 1
         _RingWidth("Ring Width", Range(0.01, 0.5)) = 0.16
         _Strength("Distortion Strength", Range(0, 0.2)) = 0.055
     }

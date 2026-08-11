@@ -2,7 +2,9 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
+using UnityEngine.Timeline;
 
 namespace ShowTime.EditorTools
 {
@@ -58,21 +60,20 @@ namespace ShowTime.EditorTools
                 mob.transform.position = new Vector3(1.4f + col * 0.8f + jx, 0.5f, 0.2f + row * 1.1f + jz);
                 mob.transform.localScale = new Vector3(0.6f, 1.0f, 1f);
                 mob.GetComponent<Renderer>().sharedMaterial = mobMats[row];
-                mob.AddComponent<HitFlash>();  // M1-①: 플래시 구동부
-                mob.AddComponent<Dissolver>(); // M1-②: 디졸브 구동부
-                mob.AddComponent<Outliner>();  // M1-③: 아웃라인 구동부
                 idx++;
             }
+            // M2: 렌더러당 구동부 3개 대신 그룹 하나가 MPB를 일괄 관리 (Timeline 트랙의 바인딩 대상)
+            var mobGroup = mobRoot.AddComponent<MobGroup>();
 
-            // M1-④: 충격파 왜곡 쿼드 — 몹 무리 앞(카메라 쪽)에 배치. 대기 중엔 렌더러 꺼짐(Shockwave.Awake)
+            // M1-④: 충격파 왜곡 쿼드 — ShaderFloatTrack이 _Progress와 렌더러 on/off를 구동
+            // (머티리얼 기본값 _Progress=1 → 대기 중엔 fade=0이라 전 픽셀 clip = 보이지 않음)
             var wave = GameObject.CreatePrimitive(PrimitiveType.Quad);
             wave.name = "Shockwave";
             Object.DestroyImmediate(wave.GetComponent<Collider>());
             wave.transform.position = new Vector3(2.9f, 1.2f, -0.6f);
             wave.transform.localScale = new Vector3(7f, 7f, 1f);
-            wave.GetComponent<Renderer>().sharedMaterial =
-                MakeMat("M1_Shockwave", Color.white, "ShowTime/ScreenDistortion");
-            wave.AddComponent<Shockwave>();
+            var waveRenderer = wave.GetComponent<Renderer>();
+            waveRenderer.sharedMaterial = MakeMat("M1_Shockwave", Color.white, "ShowTime/ScreenDistortion");
 
             // 카메라 — 가로 한 화면 구도 (아군 좌 / 적 우), 그레이박스용 단색 배경
             var cam = Camera.main;
@@ -90,8 +91,34 @@ namespace ShowTime.EditorTools
                 light.color = new Color(1f, 0.96f, 0.90f);
             }
 
-            // M1 검증 드라이버 (플래시 스윕 → 디졸브 소멸 → 재등장 루프)
-            new GameObject("M1ShaderDemo").AddComponent<M1ShaderDemo>();
+            // M2: PlayableDirector가 스킬 쇼케이스 타임라인을 루프 재생 (M1ShaderDemo 대체)
+            var directorGO = new GameObject("Director");
+            var director = directorGO.AddComponent<PlayableDirector>();
+            directorGO.AddComponent<HitStopReceiver>(); // 히트스탑 마커 수신자
+            var timeline = M2TimelineBuilder.Build();
+            director.playableAsset = timeline;
+            director.extrapolationMode = DirectorWrapMode.Loop;
+            foreach (var track in timeline.GetOutputTracks())
+            {
+                switch (track.name)
+                {
+                    case M2TimelineBuilder.FlashTrack:
+                    case M2TimelineBuilder.OutlineTrack:
+                    case M2TimelineBuilder.DissolveTrack:
+                        director.SetGenericBinding(track, mobGroup);
+                        break;
+                    case M2TimelineBuilder.ShockwaveTrack:
+                        director.SetGenericBinding(track, waveRenderer);
+                        break;
+                    case M2TimelineBuilder.CameraTrack:
+                        director.SetGenericBinding(track, cam.transform);
+                        break;
+                }
+            }
+
+            // [개발 보조] 게임 뷰 프레임 레코더 — 평소 꺼둠, 봇 record 명령이 켠다
+            var recorder = new GameObject("FrameRecorder").AddComponent<ShowTime.Dev.FrameRecorder>();
+            recorder.enabled = false;
 
             System.IO.Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene, ScenePath);
