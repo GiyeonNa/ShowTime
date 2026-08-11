@@ -117,6 +117,9 @@ namespace ShowTime.EditorTools
                     Status("recording");
                     break;
                 }
+                case "composer_smoke":
+                    Status(SkillComposerWindow.RunSmokeTest());
+                    break;
                 case "play":
                     EditorApplication.isPlaying = true;
                     Status("done: play");
