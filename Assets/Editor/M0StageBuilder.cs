@@ -60,8 +60,19 @@ namespace ShowTime.EditorTools
                 mob.GetComponent<Renderer>().sharedMaterial = mobMats[row];
                 mob.AddComponent<HitFlash>();  // M1-①: 플래시 구동부
                 mob.AddComponent<Dissolver>(); // M1-②: 디졸브 구동부
+                mob.AddComponent<Outliner>();  // M1-③: 아웃라인 구동부
                 idx++;
             }
+
+            // M1-④: 충격파 왜곡 쿼드 — 몹 무리 앞(카메라 쪽)에 배치. 대기 중엔 렌더러 꺼짐(Shockwave.Awake)
+            var wave = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            wave.name = "Shockwave";
+            Object.DestroyImmediate(wave.GetComponent<Collider>());
+            wave.transform.position = new Vector3(2.9f, 1.2f, -0.6f);
+            wave.transform.localScale = new Vector3(7f, 7f, 1f);
+            wave.GetComponent<Renderer>().sharedMaterial =
+                MakeMat("M1_Shockwave", Color.white, "ShowTime/ScreenDistortion");
+            wave.AddComponent<Shockwave>();
 
             // 카메라 — 가로 한 화면 구도 (아군 좌 / 적 우), 그레이박스용 단색 배경
             var cam = Camera.main;
