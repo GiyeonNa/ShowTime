@@ -9,8 +9,8 @@ namespace ShowTime.Dev
     /// </summary>
     public sealed class FrameRecorder : MonoBehaviour
     {
-        public float interval = 0.35f;               // 캡처 간격 (초, 실시간)
-        public float duration = 8.2f;                // 총 기록 길이 (타임라인 한 루프 + 여유)
+        public float interval = 0.3f;                // 캡처 간격 (초, 게임 시간)
+        public float duration = 7.6f;                // 총 기록 길이 = 타임라인 한 루프
         public string outputDir = "Docs/screenshots/rec"; // 프로젝트 루트 기준
 
         float _elapsed;
@@ -27,7 +27,10 @@ namespace ShowTime.Dev
 
         void Update()
         {
-            _elapsed += Time.unscaledDeltaTime;
+            // 게임 시간 기준 — 타임라인과 같은 시계를 쓴다. 이유 (M4 교훈):
+            // 플레이 시작 직후 히치에서 Time.maximumDeltaTime 클램프로 게임 시간이 벽시계보다
+            // 수 초 뒤처질 수 있다. 실시간 기준 녹화는 연출이 나오기 전에 끝나버린다.
+            _elapsed += Time.deltaTime;
             if (_elapsed >= duration)
             {
                 enabled = false;

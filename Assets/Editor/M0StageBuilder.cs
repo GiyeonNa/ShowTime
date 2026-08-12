@@ -91,6 +91,19 @@ namespace ShowTime.EditorTools
                 light.color = new Color(1f, 0.96f, 0.90f);
             }
 
+            // M4: 탄막 시스템 — 플레이어 위치에서 몹 방향(+X)으로 발사, 기본 Instanced 모드
+            var bulletMat = MakeMat("M4_Bullet", Color.white, "ShowTime/Bullet");
+            bulletMat.SetColor("_BaseColor", new Color(0.6f, 1.8f, 2.4f, 1f)); // HDR 청백
+            bulletMat.enableInstancing = true; // RenderMeshInstanced 필수 플래그 (없으면 매 프레임 예외)
+            var bulletsGO = new GameObject("Bullets");
+            bulletsGO.transform.position = new Vector3(-2.9f, 1.1f, 0f); // 플레이어 손끝쯤
+            var bulletSystem = bulletsGO.AddComponent<BulletSystem>();
+            bulletSystem.mesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+            bulletSystem.material = bulletMat;
+
+            // M4: 실측 프로브 (드로우콜/프레임 타임 CSV)
+            new GameObject("PerfProbe").AddComponent<ShowTime.Dev.PerfProbe>();
+
             // M3: 화면 연출 구동부 (RenderFeature가 읽는 값 + AnimationTrack 바인딩 대상)
             M3FeatureInstaller.EnsureInstalled(); // 렌더러 에셋에 피처 설치 (멱등)
             var screenFxGO = new GameObject("ScreenFx");
@@ -101,7 +114,8 @@ namespace ShowTime.EditorTools
             // M2: PlayableDirector가 스킬 쇼케이스 타임라인을 루프 재생 (M1ShaderDemo 대체)
             var directorGO = new GameObject("Director");
             var director = directorGO.AddComponent<PlayableDirector>();
-            directorGO.AddComponent<HitStopReceiver>(); // 히트스탑 마커 수신자
+            directorGO.AddComponent<HitStopReceiver>();    // 히트스탑 마커 수신자
+            directorGO.AddComponent<BulletBurstReceiver>(); // 탄막 마커 수신자
             var timeline = M2TimelineBuilder.Build();
             director.playableAsset = timeline;
             director.extrapolationMode = DirectorWrapMode.Loop;

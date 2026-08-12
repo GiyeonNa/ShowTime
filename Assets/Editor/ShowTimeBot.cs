@@ -109,8 +109,8 @@ namespace ShowTime.EditorTools
                     // 씬의 FrameRecorder를 켜고 플레이 — 녹화가 끝나면 레코더가 스스로 플레이를 멈춘다
                     var rec = UnityEngine.Object.FindFirstObjectByType<ShowTime.Dev.FrameRecorder>(FindObjectsInactive.Include);
                     if (rec == null) { Status("error: no FrameRecorder in scene"); break; }
-                    rec.interval = Arg(lines, "interval", 0.35f);
-                    rec.duration = Arg(lines, "duration", 8.2f);
+                    rec.interval = Arg(lines, "interval", 0.3f);
+                    rec.duration = Arg(lines, "duration", 7.6f); // 게임 시간 기준 한 루프
                     rec.enabled = true;
                     SessionState.SetBool("st_recwatch", true);
                     EditorApplication.isPlaying = true;
@@ -120,6 +120,17 @@ namespace ShowTime.EditorTools
                 case "composer_smoke":
                     Status(SkillComposerWindow.RunSmokeTest());
                     break;
+                case "bullet_mode":
+                {
+                    // 실측 모드 전환: naive=1 → GameObject 대조군, 기본 → Instanced
+                    var bs = UnityEngine.Object.FindFirstObjectByType<ShowTime.BulletSystem>(FindObjectsInactive.Include);
+                    if (bs == null) { Status("error: no BulletSystem"); break; }
+                    bs.mode = Arg(lines, "naive", 0f) > 0.5f
+                        ? ShowTime.BulletSystem.BulletRenderMode.NaiveGameObjects
+                        : ShowTime.BulletSystem.BulletRenderMode.Instanced;
+                    Status("done: bullet_mode " + bs.mode);
+                    break;
+                }
                 case "play":
                     EditorApplication.isPlaying = true;
                     Status("done: play");

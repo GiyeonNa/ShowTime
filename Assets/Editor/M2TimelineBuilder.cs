@@ -98,6 +98,10 @@ namespace ShowTime.EditorTools
             marker.duration = 0.09f;
             marker.timeScale = 0.05f;
 
+            // ── M4: 탄막 발사 마커 — 충격파와 함께 개시, 디졸브 구간 동안 쏟아진다 ──
+            var burst = timeline.markerTrack.CreateMarker<BulletBurstMarker>(2.85);
+            burst.duration = 1.5f;
+
             timeline.fixedDuration = 7.5; // 루프 한 사이클
             timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
 
