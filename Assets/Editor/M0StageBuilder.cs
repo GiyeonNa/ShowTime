@@ -91,6 +91,13 @@ namespace ShowTime.EditorTools
                 light.color = new Color(1f, 0.96f, 0.90f);
             }
 
+            // M3: 화면 연출 구동부 (RenderFeature가 읽는 값 + AnimationTrack 바인딩 대상)
+            M3FeatureInstaller.EnsureInstalled(); // 렌더러 에셋에 피처 설치 (멱등)
+            var screenFxGO = new GameObject("ScreenFx");
+            var screenFxDriver = screenFxGO.AddComponent<SkillImpactDriver>();
+            screenFxDriver.rippleWorldCenter = new Vector3(2.9f, 1.2f, 1.5f); // 몹 무리 중심
+            var screenFxAnimator = screenFxGO.AddComponent<Animator>();
+
             // M2: PlayableDirector가 스킬 쇼케이스 타임라인을 루프 재생 (M1ShaderDemo 대체)
             var directorGO = new GameObject("Director");
             var director = directorGO.AddComponent<PlayableDirector>();
@@ -112,6 +119,9 @@ namespace ShowTime.EditorTools
                         break;
                     case M2TimelineBuilder.CameraTrack:
                         director.SetGenericBinding(track, cam.transform);
+                        break;
+                    case M2TimelineBuilder.ScreenFxTrack:
+                        director.SetGenericBinding(track, screenFxAnimator);
                         break;
                 }
             }

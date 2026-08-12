@@ -18,6 +18,7 @@ namespace ShowTime.EditorTools
         public const string DissolveTrack = "Mob Dissolve";
         public const string ShockwaveTrack = "Shockwave";
         public const string CameraTrack = "Camera Shake";
+        public const string ScreenFxTrack = "Screen FX";
 
         [MenuItem("ShowTime/Build M2 Timeline Asset")]
         public static TimelineAsset Build()
@@ -73,6 +74,23 @@ namespace ShowTime.EditorTools
             camClip.duration = 0.5;
             camClip.easeOutDuration = 0.25;
             camClip.displayName = "임팩트 셰이크";
+
+            // ── M3: 화면 연출 (비네트/색조 + 전체 화면 물결) — 내장 AnimationTrack으로 구동 ──
+            // 렌더러가 없는 대상(RenderFeature 구동 값)은 표준 애니메이션 바인딩이 정석.
+            // 커스텀 트랙과 내장 트랙을 한 타임라인에서 혼용하는 시연이기도 하다.
+            var screenFxClip = new AnimationClip { name = "ScreenFxCurves" };
+            screenFxClip.SetCurve("", typeof(SkillImpactDriver), "intensity", new AnimationCurve(
+                new Keyframe(2.4f, 0f), new Keyframe(2.85f, 1f),
+                new Keyframe(3.7f, 1f), new Keyframe(4.5f, 0f)));
+            screenFxClip.SetCurve("", typeof(SkillImpactDriver), "rippleProgress", new AnimationCurve(
+                new Keyframe(0f, 1f), new Keyframe(2.84f, 1f),   // 1 = 꺼짐 상태 유지
+                new Keyframe(2.85f, 0f), new Keyframe(3.5f, 1f))); // 터지는 순간 0 → 화면 끝까지
+            AssetDatabase.AddObjectToAsset(screenFxClip, timeline);
+            var screenFx = timeline.CreateTrack<AnimationTrack>(null, ScreenFxTrack);
+            var screenFxTlClip = screenFx.CreateClip(screenFxClip);
+            screenFxTlClip.start = 0.0;
+            screenFxTlClip.duration = 7.5;
+            screenFxTlClip.displayName = "화면 연출";
 
             // ── 히트스탑 마커: 충격파 터지는 그 시점 ──
             timeline.CreateMarkerTrack(); // markerTrack은 자동 생성되지 않는다 — 명시적 생성 필요
