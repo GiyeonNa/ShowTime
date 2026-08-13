@@ -1,12 +1,12 @@
 # ShowTime — 전투 연출 파이프라인 데모
 
 > 이것은 게임이 아니라 **전투 연출 파이프라인의 시연**이다.
-> 타임라인 한 루프(7.5초) 안에 셰이더 4종, 커스텀 Timeline 트랙 3종+마커, RenderGraph 패스 2종, GPU Instancing 탄막이 전부 재생된다.
-> **외부 아트 에셋 0개** — 모든 씬/타임라인/머티리얼/노이즈 텍스처를 에디터 툴이 코드로 생성한다.
+> 타임라인 한 루프(7.5초) 안에 셰이더 4종, 커스텀 Timeline 트랙 3종+마커, RenderGraph 패스 2종, GPU Instancing 탄막, Spine 연동이 전부 재생된다.
+> 모든 씬/타임라인/머티리얼/노이즈 텍스처를 에디터 툴이 코드로 생성한다 — 외부 아트 에셋은 Spine 공식 샘플(Spineboy) 하나가 유일한 의도적 예외다.
 
 ![showcase](Docs/media/showcase.gif)
 
-*평타 스윕(히트 플래시) → 아웃라인 전멸 예고 → 히트스탑 + 충격파(오브젝트/패스 2방식 동시) + 화면 색조 + 카메라 셰이크 + 탄막 600발 → 디졸브 전멸 → 재등장 루프*
+*평타 스윕(히트 플래시) → Spineboy 공격 모션 → 히트스탑 + 충격파(오브젝트/패스 2방식 동시) + 화면 색조 + 카메라 셰이크 + 총구 본에서 탄막 600발 → 디졸브 전멸 → 재등장 루프*
 
 ## 무엇을 보여주는 데모인가
 
@@ -17,6 +17,7 @@
 | RenderGraph 렌더링 확장 (Unity 6) | 비네트/색조 + 전체 화면 물결 패스 — 평상시 비용 0 설계 | [`Assets/_Project/Scripts/Rendering`](Assets/_Project/Scripts/Rendering) |
 | 모바일 최적화 + 실측 | GPU Instancing 탄막 600발 = 드로우콜 +1 (대조군 +434) — CSV 원자료 포함 | [`BulletSystem`](Assets/_Project/Scripts/Bullets/BulletSystem.cs) · [`Docs/perf`](Docs/perf) |
 | 아티스트 협업 (기술적 구현) | 코드 없이 클립 배치·튜닝·바인딩이 가능한 조립 툴, 겹침(크로스페이드) 함정 경고 내장 | [`SkillComposerWindow`](Assets/Editor/SkillComposerWindow.cs) |
+| Spine 연동 | 공격 모션을 AnimationState 트랙 1에 오버레이(Timeline 마커 트리거), 탄막 발사 원점 = `gun-tip` 본 추적(BoneFollower) | [`SpineAttackReceiver`](Assets/_Project/Scripts/Timeline/SpineAttackReceiver.cs) |
 
 ## 핵심 숫자 (Before/After)
 
@@ -37,6 +38,11 @@
 4. 연출 편집: `ShowTime → 연출 조립 (Skill Composer)` 또는 Timeline 창에서 `SkillShowcase.playable`
 
 ## 프로젝트 구조
+
+## 라이선스 고지
+
+- 이 저장소의 코드는 자유롭게 참고 가능.
+- `Assets/Spine`, `Assets/Spine Examples`는 [Esoteric Software의 spine-unity 런타임과 공식 예제](https://esotericsoftware.com/spine-unity-download)이며 [Spine Runtimes License](https://esotericsoftware.com/spine-runtimes-license)를 따른다. 예제 데이터(Spineboy)는 학습·평가 목적으로 사용했다. Spine으로 제작한 자체 데이터를 제품에 쓰려면 Spine 에디터 라이선스가 필요하다.
 
 ```
 Assets/

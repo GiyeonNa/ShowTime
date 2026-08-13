@@ -22,6 +22,9 @@ namespace ShowTime
         public Mesh mesh;
         public Material material;
 
+        [Header("발사 원점 (선택 — 비었으면 자기 위치. M5: Spine 총구 본 추적)")]
+        public Transform muzzle;
+
         [Header("탄막 파라미터")]
         [Min(1)] public int maxBullets = 600;
         public float emitPerSecond = 450f;
@@ -111,7 +114,7 @@ namespace ShowTime
 
             _bullets[_alive++] = new Bullet
             {
-                position = transform.position,
+                position = muzzle != null ? muzzle.position : transform.position,
                 velocity = dir * (speed + Random.Range(-speedJitter, speedJitter)),
                 age = 0f,
             };

@@ -1,4 +1,5 @@
 // M0: 그레이박스 무대를 코드로 생성하는 빌더 (AnteHill 방식 — 씬은 툴로 생성)
+using Spine.Unity;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -39,12 +40,36 @@ namespace ShowTime.EditorTools
             ground.transform.localScale = new Vector3(3f, 1f, 1.6f);
             ground.GetComponent<Renderer>().sharedMaterial = groundMat;
 
-            // 아군 캐릭터 (좌측) — 2.5D 스프라이트 자리의 스탠드 쿼드
-            var player = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            player.name = "Player";
-            player.transform.position = new Vector3(-3.5f, 0.9f, 0f);
-            player.transform.localScale = new Vector3(1.2f, 1.8f, 1f);
-            player.GetComponent<Renderer>().sharedMaterial = playerMat;
+            // 아군 캐릭터 (좌측) — M5: Spine 샘플(Spineboy)이 있으면 스켈레톤, 없으면 그레이박스 쿼드 (손절선)
+            Transform muzzleTransform = null;
+            var spineData = AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(
+                "Assets/Spine Examples/Spine Skeletons/spineboy-pro/spineboy-pro_SkeletonData.asset");
+            if (spineData != null)
+            {
+                var skeleton = SkeletonAnimation.NewSkeletonAnimationGameObject(spineData);
+                skeleton.gameObject.name = "Player_Spineboy";
+                skeleton.transform.position = new Vector3(-3.5f, 0.06f, 0f);
+                skeleton.transform.localScale = Vector3.one * 0.28f; // 스켈레톤 높이 686 × 0.01 → 몹과 스케일 맞춤
+                skeleton.initialSkinName = "default";
+                skeleton.AnimationName = "idle"; // 대기 루프 (공격은 Timeline 마커가 트랙 1에 얹는다)
+                skeleton.loop = true;
+
+                // 탄막 발사 원점 = 총구 본 추적 (Spine 본을 Unity Transform으로 노출하는 표준 방법)
+                var muzzleGO = new GameObject("Muzzle_GunTip");
+                muzzleGO.transform.SetParent(skeleton.transform, false);
+                var follower = muzzleGO.AddComponent<BoneFollower>();
+                follower.skeletonRenderer = skeleton;
+                follower.boneName = "gun-tip";
+                muzzleTransform = muzzleGO.transform;
+            }
+            else
+            {
+                var player = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                player.name = "Player";
+                player.transform.position = new Vector3(-3.5f, 0.9f, 0f);
+                player.transform.localScale = new Vector3(1.2f, 1.8f, 1f);
+                player.GetComponent<Renderer>().sharedMaterial = playerMat;
+            }
 
             // 적 웨이브 (우측) — 몹 20기 그리드 + 지터 (뒷줄일수록 멀리, 겹침 최소화)
             var mobRoot = new GameObject("Mobs");
@@ -100,6 +125,7 @@ namespace ShowTime.EditorTools
             var bulletSystem = bulletsGO.AddComponent<BulletSystem>();
             bulletSystem.mesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
             bulletSystem.material = bulletMat;
+            bulletSystem.muzzle = muzzleTransform; // M5: Spineboy 총구 본에서 발사 (null이면 자기 위치)
 
             // M4: 실측 프로브 (드로우콜/프레임 타임 CSV)
             new GameObject("PerfProbe").AddComponent<ShowTime.Dev.PerfProbe>();
@@ -116,6 +142,7 @@ namespace ShowTime.EditorTools
             var director = directorGO.AddComponent<PlayableDirector>();
             directorGO.AddComponent<HitStopReceiver>();    // 히트스탑 마커 수신자
             directorGO.AddComponent<BulletBurstReceiver>(); // 탄막 마커 수신자
+            directorGO.AddComponent<SpineAttackReceiver>(); // M5: Spine 공격 모션 수신자
             var timeline = M2TimelineBuilder.Build();
             director.playableAsset = timeline;
             director.extrapolationMode = DirectorWrapMode.Loop;

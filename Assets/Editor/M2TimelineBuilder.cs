@@ -102,6 +102,9 @@ namespace ShowTime.EditorTools
             var burst = timeline.markerTrack.CreateMarker<BulletBurstMarker>(2.85);
             burst.duration = 1.5f;
 
+            // ── M5: Spine 공격 모션 — 탄막보다 반 박자 먼저 (조준→발사 선행 동작) ──
+            timeline.markerTrack.CreateMarker<SpineAttackMarker>(2.6);
+
             timeline.fixedDuration = 7.5; // 루프 한 사이클
             timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
 

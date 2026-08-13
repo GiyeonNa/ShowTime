@@ -65,6 +65,16 @@
 - 셋패스가 비슷한 이유: SRP Batcher가 나이브 쪽 상태 변경을 흡수한다 — 드로우콜 폭증은 인스턴싱만이 막는다.
 - 프레임 타임 차이가 작은 이유: 고성능 PC의 CPU 여유. 드로우콜당 CPU 비용이 지배하는 모바일/키오스크급에서 벌어지는 항목이다 (정직한 해석).
 
+## 핵심 구현 5 — Spine 연동 (선택 확장)
+
+**문제**: 스켈레탈 애니메이션 캐릭터를 기존 연출 파이프라인(Timeline·탄막)에 어떻게 물리는가.
+
+**해결** (spine-unity 4.2, Spineboy 공식 샘플):
+- **Timeline → Spine**: `SpineAttackMarker`(INotification)가 공격 모션을 트리거. idle은 AnimationState **트랙 0**에서 계속 돌고, 공격은 **트랙 1**에 얹었다가 `AddEmptyAnimation`으로 블렌드 복귀 — 상태머신 없이 오버레이. (기존 히트스탑/탄막 마커와 같은 수신자 패턴이라 코드 3줄 수준의 확장)
+- **Spine → 탄막**: 발사 원점을 `BoneFollower`로 `gun-tip` 본에 고정 — 탄막이 총구를 정확히 따라간다. Spine 본을 Unity Transform으로 노출하는 표준 경로.
+- URP 렌더링: Spine 기본 셰이더(unlit)는 SRPDefaultUnlit 패스로 URP에서 그대로 동작 — 별도 셰이더 패키지 불필요했음.
+- 라이선스: 예제 데이터는 학습·평가 목적 사용 (README 고지 참조). "외부 에셋 0" 원칙의 유일한 의도적 예외.
+
 ---
 
 ## 시행착오 기록 (문제 → 원인 → 교훈)

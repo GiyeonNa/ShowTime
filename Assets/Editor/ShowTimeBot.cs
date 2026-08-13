@@ -120,6 +120,16 @@ namespace ShowTime.EditorTools
                 case "composer_smoke":
                     Status(SkillComposerWindow.RunSmokeTest());
                     break;
+                case "import_package":
+                {
+                    string path = null;
+                    foreach (var l in lines)
+                        if (l.StartsWith("path=")) path = l.Substring(5).Trim();
+                    if (path == null || !File.Exists(path)) { Status("error: package not found " + path); break; }
+                    AssetDatabase.ImportPackage(path, false); // interactive=false — 전체 무확인 임포트
+                    Status("done: import_package");
+                    break;
+                }
                 case "bullet_mode":
                 {
                     // 실측 모드 전환: naive=1 → GameObject 대조군, 기본 → Instanced
